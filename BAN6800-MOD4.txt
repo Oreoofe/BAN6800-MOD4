@@ -1,0 +1,70 @@
+# CareConnect — Module 4: Predictive Model Development & Validation
+
+## Quick Start
+```bash
+# 1. Install dependencies
+pip install -r requirements_mod4.txt
+
+# 2. Ensure Module 3 output exists
+# Place careconnect_modeling.parquet at data/processed/careconnect_modeling.parquet
+# (or run the Module 3 pipeline first)
+
+# 3. Run full Module 4 workflow
+python run_mod4.py
+
+# 4. Start MLflow UI to review experiments
+mlflow ui
+
+# 5. Start FastAPI (in a separate terminal)
+uvicorn src.api.main:app --reload --port 8000
+# Test: curl -X POST "http://localhost:8000/predict" -H "Content-Type: application/json" \
+#       -d '{"features": {"Age": 45, "Gender": "F", "lead_time_days": 12, "SMS_received": 0}}'
+```
+
+## Deliverables Checklist
+- [x] Model Validation Report (`docs/Model_Validation_Report.md`)
+- [x] SHAP Analysis Notebook (`notebooks/shap_analysis.ipynb`)
+- [x] Fairness Metrics Report (`docs/fairness_report.md`)
+- [x] Model Card (`docs/model_card.md`)
+- [x] MLflow experiment tracking (run `mlflow ui`)
+- [x] Serialized model (`artifacts/xgboost.joblib` — generated after training)
+- [x] FastAPI `/predict` endpoint (`src/api/main.py`)
+- [x] AI Disclosure (in report header)
+- [x] References (NXU format, in report)
+
+## File Map
+```
+careconnect_mod4/
+├── src/
+│   ├── models/
+│   │   ├── baseline.py          # Dummy baselines
+│   │   └── train.py             # LR, RF, XGBoost + MLflow
+│   ├── explainability/
+│   │   ├── shap_analysis.py     # Global + local SHAP + reason codes
+│   │   ├── lime_explainer.py    # LIME local explanations
+│   │   └── counterfactuals.py   # DiCE counterfactuals
+│   ├── fairness/
+│   │   ├── metrics.py           # Fairlearn fairness metrics
+│   │   └── mitigation.py        # Bias mitigation (ExponentiatedGradient)
+│   └── api/
+│       └── main.py              # FastAPI /predict + /health + /model_info
+├── notebooks/
+│   └── shap_analysis.ipynb      # SHAP analysis notebook
+├── docs/
+│   ├── Model_Validation_Report.md
+│   ├── model_card.md
+│   └── fairness_report.md
+├── artifacts/                   # Generated after run (models, plots, reports)
+├── mlruns/                      # MLflow tracking directory
+├── run_mod4.py                  # End-to-end orchestrator
+└── requirements_mod4.txt        # Python dependencies
+```
+
+## Key Design Decisions
+1. **Recall over precision:** The business cost of a missed at-risk patient exceeds an unnecessary intervention.
+2. **No SMOTE:** Synthetic oversampling complicates lineage and fairness auditing; class weights handle imbalance instead.
+3. **Leakage-safe features:** `prior_noShow_rate` uses chronological cumcount with current row excluded.
+4. **Fairness as a gate:** If disparity >5%, the model halts; mitigation is applied and re-evaluated.
+5. **Human-in-the-loop:** FastAPI returns reason codes, not automated decisions.
+
+**Author:** Gladys Izuagbe (ID: 160948) | BAN 6800, Nexford University
